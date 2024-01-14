@@ -44,20 +44,29 @@ class MulletDetection:
         
     def plot_boxes(self, results, frame):
         labels, cord = results
+        print(labels)
         n = cord.shape[0]
         x_shape, y_shape = frame.shape[1],frame.shape[0]
         for i in range(n):
             row = cord[i]
             if row[4] >= 0.2:
                 x1,y1,x2,y2 = int(row[0]*x_shape),int(row[1]*y_shape),int(row[2]*x_shape),int(row[3]*y_shape)
-                bgr = (0,255,0)
-                cv2.rectangle(frame,(x1,y1), (x2, y2), bgr, 2)
+                box_color = (0,255,255)
+                if labels[i] == 34:  # Assuming 0 corresponds to "mullet"
+                    box_color = (0, 165, 255)  # Orange color for mullet
+                elif labels[i] == 39:  # Assuming 1 corresponds to "bottle"
+                    box_color = (255, 0, 0)  # Blue color for bottle
+                else:
+                    box_color = (0, 0, 255)  # Red color for other objects
+                cv2.rectangle(frame,(x1,y1), (x2, y2), box_color, 2)
+                label_position = (x1, y1 - 10)  # Above the box
+                cv2.putText(frame, self.class_to_label(labels[i]), label_position, cv2.FONT_HERSHEY_SIMPLEX, 0.5, box_color, 2)
 
         return frame
 
 
     def __call__(self):
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(self.capture_index)
         while True:
             ret, frame = cap.read()
             frame = cv2.resize(frame, (640,640), interpolation = cv2.INTER_AREA)
@@ -75,5 +84,5 @@ class MulletDetection:
         
         
 if __name__ == "__main__":
-    mullet_detector = MulletDetection(capture_index=0, model_name="best.pt")
+    mullet_detector = MulletDetection(capture_index=0, model_name="yolov5l.pt")
     mullet_detector()
