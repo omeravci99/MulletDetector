@@ -4,18 +4,21 @@ from typing import Any
 import numpy as np
 import torch
 import cv2
+import os
 import time
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 from ozurover_messages.msg import Marker
 from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import String
+#from ultralytics import YOLO
+
 
 
 
 class MulletDetection:
     # Init function
-    def __init__(self,capture_index,model_name):
+    def _init_(self,capture_index,model_name):
 
         # İnitializing node, publisher and subcribe topics
         rospy.init_node("ares_mullet_detecter")
@@ -34,7 +37,8 @@ class MulletDetection:
     def load_model(self,model_name):
 
         print(f"Loading model from: {model_name}")
-        model = torch.hub.load("ultralytics/yolov5","custom", path=model_name, force_reload=True)
+        model = torch.hub.load("ultralytics/yolov5", "custom", path=model_name, force_reload=True)
+        #model = YOLO(model_name)
         print(f"{model_name} loaded successfully")
         return model
 
@@ -59,7 +63,6 @@ class MulletDetection:
             # Creates a bridge for forwarding images
             bridge = CvBridge() 
             frame = bridge.imgmsg_to_cv2(image_data, desired_encoding='bgr8')  # It converts image to opencv format
-            
             # Change from cv2.waitKey(0) to cv2.waitKey(1)
             frame = cv2.resize(frame, (640, 640), interpolation=cv2.INTER_AREA)
             
@@ -67,35 +70,42 @@ class MulletDetection:
             labels, cord = self.detection(frame)
 
             n = cord.shape[0] # Number of detected objects
-            x_shape, y_shape = frame.shape[1], frame.shape[0] # Width and height of the image
+            x_shape, y_shape = 1280, 720 # Width and height of the image
 
+            frame = cv2.resize(frame, (1280,720), interpolation=cv2.INTER_AREA)
             # Iterating for every detected object
             for i in range(n):
                 row = cord[i] # Sample cord[i] = [0.77514, 0.12554, 0.78478, 0.13924, 0.32837] 
-                
-                # Checks for confidince score for detected object
-                if row[4] >= 0.2: 
-                    # Left top corner and right bottom corner cordinates
-                    x1, y1, x2, y2 = int(row[0] * x_shape), int(row[1] * y_shape), int(row[2] * x_shape), int(row[3] * y_shape)
+ 
 
+                # Checks for confidince score for detected object
+                if row[4] >= 0: 
+                    # Left top corner and right bottom corner cordinates
+                    x1, y1, x2, y2 = (
+                    int(row[0] * x_shape),
+                    int(row[1] * y_shape),
+                    int(row[2] * x_shape),
+                    int(row[3] * y_shape),
+                )
                     # Draws the bounding box and displays the frame
+                    
+                    
                     cv2.rectangle(frame,(x1,y1), (x2, y2), (0,255,0), 2)
                     cv2.imshow("Data", frame)
-                    cv2.waitKey(1) 
-
+                    cv2.waitKey(1)
 
                     # Specified Message type will be written here.
 
 
                     # Creates message that will be published and publishes it
-                    message = f"{self.class_to_label(labels[i])},{labels[i]},{x1},{y1},{x2},{y2}"
-                    self.pub.publish(String(f"zaa {message}"))
+                    message = f"{self.class_to_label(labels[i])},{labels[i]},{(x1+x2)/2},{(y1+y2)/2}"
+                    self.pub.publish(String(message))
 
         except Exception as e:
             rospy.logerr(f"Error processing image: {repr(e)}")
 
         
         
-if __name__ == "__main__":
-    mullet_detector = MulletDetection(capture_index=0, model_name="model/yolov5/yolov5l.pt")
+if _name_ == "_main_":
+    mullet_detector = MulletDetection(capture_index=0, model_name="/home/aseris/catkin_ws/src/mulletdetector/best.pt")
     rospy.spin()
