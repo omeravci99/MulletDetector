@@ -45,6 +45,7 @@ class MulletDetection:
         frame = [frame]
         results = self.model(frame)
         labels, cord = results.xyxyn[0][:, -1], results.xyxyn[0][:, :-1]
+        print(labels,cord)
         return labels, cord
 
 
