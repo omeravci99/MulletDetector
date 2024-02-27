@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 2
+names: ['bottle', 'hammer']
+
+roboflow:
+  workspace: markerdetector
+  project: marker-detection-lna8s
+  version: 1
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/markerdetector/marker-detection-lna8s/dataset/1

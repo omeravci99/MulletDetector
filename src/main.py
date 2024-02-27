@@ -7,7 +7,6 @@ import cv2
 import time
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
-from ozurover_messages.msg import Marker
 from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import String
 
@@ -98,5 +97,5 @@ class MulletDetection:
         
         
 if __name__ == "__main__":
-    mullet_detector = MulletDetection(capture_index=0, model_name="model/yolov5/yolov5l.pt")
+    mullet_detector = MulletDetection(capture_index=0, model_name="/model/yolov5/runs/train/exp3/weights/best.pt")
     rospy.spin()
